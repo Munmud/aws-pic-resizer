@@ -45,7 +45,7 @@ def lambda_handler(event,context):
     resized_image = resize_image(image_content, new_width=width, new_height=height)
 
     # # Upload the resized image back to S3
-    resized_key = f"resized/{str(width)}x{str(height)}/{os.path.basename(file_key)}"
+    resized_key = f"resized/{str(width)}x{str(height)}/{file_key}"
     s3.put_object(Body=resized_image, Bucket=output_bucket_name, Key=resized_key)
 
 

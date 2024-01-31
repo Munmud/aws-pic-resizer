@@ -6,23 +6,23 @@ Description: >
 Globals:
   Function:
     Timeout: 30
-    MemorySize: 128
+    MemorySize: 512
 
 Parameters:
-  SourceBucketName:
+  ImageBucket:
     Type: String
     Default:  "moontasir-input-picture-bucket"
 
-  DestinationBucketName:
-    Type: String
-    Default:  "moontasir-output-picture-bucket"
+  # ImageBucket:
+  #   Type: String
+  #   Default:  "moontasir-output-picture-bucket"
 
 Resources:
 
   PictureInputBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref SourceBucketName
+      BucketName: !Ref ImageBucket
       NotificationConfiguration:
         QueueConfigurations:
           - Event: 's3:ObjectCreated:*'
@@ -44,7 +44,7 @@ Resources:
             Resource: !GetAtt StandardQueue.Arn
             Condition:
               ArnLike:
-                aws:SourceArn: !Join ["",['arn:aws:s3:::',!Ref SourceBucketName]]
+                aws:SourceArn: !Join ["",['arn:aws:s3:::',!Ref ImageBucket]]
               StringEquals:
                 aws:SourceAccount: !Ref AWS::AccountId
       Queues:
@@ -75,10 +75,10 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
 
-  PictureOutputBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Ref DestinationBucketName
+  # PictureOutputBucket:
+  #   Type: AWS::S3::Bucket
+  #   Properties:
+  #     BucketName: !Ref ImageBucket
 
   ImageSizeGetterFunction:
     Type: AWS::Serverless::Function
@@ -101,12 +101,12 @@ Resources:
       Runtime: python3.11
       Environment:
         Variables:
-          S3_OUTPUT_BUCKET_NAME: !Ref DestinationBucketName
+          S3_OUTPUT_BUCKET_NAME: !Ref ImageBucket
       Policies:
         - S3ReadPolicy:
-            BucketName: !Ref SourceBucketName
+            BucketName: !Ref ImageBucket
         - S3WritePolicy:
-            BucketName: !Ref DestinationBucketName
+            BucketName: !Ref ImageBucket
 
   moontasirStateMachineRole:
     Type: AWS::IAM::Role
@@ -140,7 +140,22 @@ Resources:
           GetImageSize:
             Type: Task
             Resource: !GetAtt ImageSizeGetterFunction.Arn
-            Next: ParallelResizeImage
+            Next: CheckIfImage
+
+          CheckIfImage:
+            Type: Choice
+            Choices:
+              - Variable: "$.isImage"
+                BooleanEquals: true
+                Next: ParallelResizeImage
+              - Variable: "$.isImage"
+                BooleanEquals: false
+                Next: NotImageFinish
+
+          NotImageFinish:
+            Type: Pass
+            End: True
+
           ParallelResizeImage:
             Type: Map
             InputPath: $
