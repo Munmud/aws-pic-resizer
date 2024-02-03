@@ -6,11 +6,25 @@
 This project aims to provide a versatile image resizer solution, allowing users to efficiently resize images based on their requirements. The solution is implemented as an AWS Serverless Application Model (AWS SAM) with two distinct functions:
 
 1. Image Resize Function
-This function handles the core image resizing logic. It utilizes various libraries for image processing and communicates with external services as needed.
 
 2. Image Size Getter Function
-This function is responsible for retrieving information about the size of images. It complements the image resizing process by providing accurate dimensions for better handling of image transformations.
 
+
+### S3 Picture Input Path
+`Brand/{brand_id}/Product/{product_id}/Variation/{variation_id}/{file_name}.{picture_extension}`
+
+### S3 Output Picture Path
+`resized/{width}x{height}/Brand/{brand_id}/Product/{product_id}/Variation/{variation_id}/{file_name}.JPEG`
+
+### Dynamodb Image Model
+- ImageId (String)
+- Height (Num)
+- Width (Num)
+
+
+
+-------------------------------
+## Auto Generated
 
 ## Deploy the sample application
 
